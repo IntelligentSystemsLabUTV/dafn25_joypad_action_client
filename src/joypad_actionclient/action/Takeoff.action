@@ -1,0 +1,23 @@
+# Takeoff operation.
+#
+# Roberto Masocco <r.masocco@dotxautomation.com>
+#
+# June 6, 2023
+#
+# UPDATED: January 19, 2026 (added goal parameter tgt_altitude)
+
+# GOAL
+# Target position and orientation to reach upon takeoff
+geometry_msgs/PoseStamped takeoff_pose
+
+# Target altitude to reach as takeoff's objective
+float tgt_altitude
+
+---
+# RESULT
+# Operation result
+dua_common_interfaces/CommandResultStamped result
+---
+# FEEDBACK
+# Current pose
+geometry_msgs/PoseStamped current_pose

@@ -1,0 +1,25 @@
+# Landing operation.
+#
+# Roberto Masocco <r.masocco@dotxautomation.com>
+#
+# June 6, 2023
+#
+# UPDATED: January 19, 2026 (added goal parameter thresh_altitude)
+
+# GOAL
+# Enforce landing operation without initial descent
+bool descend
+
+# Enforce threshold altitude for which initial descent is used 
+float thresh_altitude
+
+# Decision position
+geometry_msgs/PointStamped minimums
+---
+# RESULT
+# Operation result
+dua_common_interfaces/CommandResultStamped result
+---
+# FEEDBACK
+# Current pose
+geometry_msgs/PoseStamped pose

@@ -1,0 +1,64 @@
+[0.027s] Invoking command in '/home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/neo/workspace/install/test_server:/opt/ros/jazzy PS1=(dua-venv) %m%# VIRTUAL_ENV_PROMPT=(dua-venv) /usr/bin/cmake /home/neo/workspace/src/joypad_actionclient -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient
+[0.141s] -- The C compiler identification is GNU 13.3.0
+[0.250s] -- The CXX compiler identification is GNU 13.3.0
+[0.281s] -- Detecting C compiler ABI info
+[0.443s] -- Detecting C compiler ABI info - done
+[0.466s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.466s] -- Detecting C compile features
+[0.467s] -- Detecting C compile features - done
+[0.486s] -- Detecting CXX compiler ABI info
+[0.695s] -- Detecting CXX compiler ABI info - done
+[0.716s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.716s] -- Detecting CXX compile features
+[0.717s] -- Detecting CXX compile features - done
+[0.728s] -- Found action_msgs: 2.0.3 (/opt/ros/jazzy/share/action_msgs/cmake)
+[1.024s] -- Found Python3: /opt/dua-venv/bin/python3 (found version "3.12.3") found components: Interpreter 
+[1.174s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[1.340s] -- Found rosidl_generator_c: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[1.384s] -- Found rosidl_generator_cpp: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[1.433s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.493s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.663s] -- Found rclcpp: 28.1.13 (/opt/ros/jazzy/share/rclcpp/cmake)
+[1.805s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[1.817s] -- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+[2.013s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  
+[2.055s] -- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") 
+[2.102s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[2.299s] -- Found rclcpp_action: 28.1.13 (/opt/ros/jazzy/share/rclcpp_action/cmake)
+[2.337s] -- Found ament_lint_auto: 0.17.3 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[2.598s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[2.598s] -- Configured cppcheck include dirs: 
+[2.599s] -- Configured cppcheck exclude dirs and/or files: 
+[2.603s] -- Added test 'lint_cmake' to check CMake code style
+[2.614s] -- Added test 'uncrustify' to check C / C++ code style
+[2.614s] -- Configured uncrustify additional arguments: 
+[2.617s] -- Added test 'xmllint' to check XML markup files
+[2.717s] -- Configuring done (2.7s)
+[2.726s] -- Generating done (0.0s)
+[2.730s] -- Build files have been written to: /home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient
+[2.745s] Invoked command in '/home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/neo/workspace/install/test_server:/opt/ros/jazzy PS1=(dua-venv) %m%# VIRTUAL_ENV_PROMPT=(dua-venv) /usr/bin/cmake /home/neo/workspace/src/joypad_actionclient -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient
+[2.748s] Invoking command in '/home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/neo/workspace/install/test_server:/opt/ros/jazzy PS1=(dua-venv) %m%# VIRTUAL_ENV_PROMPT=(dua-venv) /usr/bin/cmake --build /home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient -- -j8 -l8
+[2.833s] Invoked command in '/home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/neo/workspace/install/test_server:/opt/ros/jazzy PS1=(dua-venv) %m%# VIRTUAL_ENV_PROMPT=(dua-venv) /usr/bin/cmake --build /home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient -- -j8 -l8
+[2.852s] Invoking command in '/home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/neo/workspace/install/test_server:/opt/ros/jazzy PS1=(dua-venv) %m%# VIRTUAL_ENV_PROMPT=(dua-venv) /usr/bin/cmake --install /home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient
+[2.871s] -- Install configuration: "RelWithDebInfo"
+[2.872s] -- Execute custom install script
+[2.873s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/include/simple_actionclient_cpp/simple_actionclient.hpp
+[2.890s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/include/simple_actionclient_cpp/visibility_control.h
+[2.907s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/ament_index/resource_index/package_run_dependencies/joypad_actionclient
+[2.923s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/ament_index/resource_index/parent_prefix_path/joypad_actionclient
+[2.940s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/environment/ament_prefix_path.sh
+[2.956s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/environment/ament_prefix_path.dsv
+[2.973s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/environment/path.sh
+[2.989s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/environment/path.dsv
+[3.005s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/local_setup.bash
+[3.023s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/local_setup.sh
+[3.040s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/local_setup.zsh
+[3.056s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/local_setup.dsv
+[3.073s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/package.dsv
+[3.090s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/ament_index/resource_index/packages/joypad_actionclient
+[3.107s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/cmake/ament_cmake_export_include_directories-extras.cmake
+[3.124s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/cmake/ament_cmake_export_dependencies-extras.cmake
+[3.140s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/cmake/joypad_actionclientConfig.cmake
+[3.157s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/cmake/joypad_actionclientConfig-version.cmake
+[3.173s] -- Symlinking: /home/neo/workspace/src/joypad_actionclient/install/joypad_actionclient/share/joypad_actionclient/package.xml
+[3.197s] Invoked command in '/home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/neo/workspace/install/test_server:/opt/ros/jazzy PS1=(dua-venv) %m%# VIRTUAL_ENV_PROMPT=(dua-venv) /usr/bin/cmake --install /home/neo/workspace/src/joypad_actionclient/build/joypad_actionclient

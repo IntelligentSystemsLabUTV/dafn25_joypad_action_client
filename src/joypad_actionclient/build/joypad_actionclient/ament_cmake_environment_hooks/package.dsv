@@ -1,0 +1,4 @@
+source;share/joypad_actionclient/local_setup.bash
+source;share/joypad_actionclient/local_setup.dsv
+source;share/joypad_actionclient/local_setup.sh
+source;share/joypad_actionclient/local_setup.zsh

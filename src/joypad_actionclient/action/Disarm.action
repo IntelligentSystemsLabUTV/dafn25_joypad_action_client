@@ -1,0 +1,13 @@
+# Arming operation.
+#
+# Roberto Masocco <r.masocco@dotxautomation.com>
+#
+# June 6, 2023
+
+# GOAL
+---
+# RESULT
+# Operation result
+dua_common_interfaces/CommandResultStamped result
+---
+# FEEDBACK
