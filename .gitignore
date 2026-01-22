@@ -2,6 +2,7 @@
 **/build/*
 **/install/*
 **/log/*
+**/TODO.md
 
 # Uncomment the following to avoid pushing personal configurations
 # .vscode/

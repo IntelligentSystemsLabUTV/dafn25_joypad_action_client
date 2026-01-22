@@ -32,16 +32,36 @@ find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
-
-set(ACTION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/action")
-file(GLOB ACTION_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${ACTION_DIR}/*.action")
-
 # NOTE: here ends all lines additional to the ones already given by the shared repo
 
 # Install headers
 install(
   DIRECTORY include/
   DESTINATION include)
+
+# Install Launch files
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
+
+# Install config files
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME})
+
+# Client(s)
+add_executable(joypad_actionclient src/joypad_actionclient.cpp) # TODO: add after src/joypad_actionclient.cpp all other cpp files in src (maybe even *.cpp works?)
+target_include_directories(joypad_actionclient PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(joypad_actionclient PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies(
+  joypad_actionclient
+  rclcpp
+  rclcpp_action
+)
+
+# Install executables
+install(TARGETS joypad_actionclient 
+  DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -54,8 +74,5 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
-ament_export_include_directories(include)
-ament_export_dependencies(rclcpp)
 
 ament_package()

@@ -1,0 +1,19 @@
+# AI
+# TODO: chage the buttons' numbers to the ones we actually want to use (ofc, same applies to the takeoff and landing parameters)
+joypad_action_client:
+  ros__parameters:
+    actions:
+      arm:
+        name: "/arm"
+        button: 0
+      disarm:
+        name: "/disarm"
+        button: 1
+      takeoff:
+        name: "/takeoff"
+        button: 2
+        target_altitude: 2.0
+      landing:
+        name: "/landing"
+        button: 3
+        threshold_altitude: 0.5
