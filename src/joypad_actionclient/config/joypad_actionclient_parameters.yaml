@@ -3,18 +3,16 @@
 # TODO: possibly change namespace for the names from "/xxx" to "test_server/xxx" in order to test interractions w the test_server
 joypad_actionclient:
   ros__parameters:
-    actions:
-      arm:
-        name: "/arm"
-        button: 0
-      disarm:
-        name: "/disarm"
-        button: 1
-      takeoff:
-        name: "/takeoff"
-        button: 2
-        target_altitude: 2.0
-      landing:
-        name: "/landing"
-        button: 3
-        threshold_altitude: 0.5
+    arm:
+      name: "~/arm"
+      button: 0
+    disarm:
+      name: "~/disarm"
+      button: 1
+    takeoff:
+      name: "~/takeoff"
+      button: 2
+      target_altitude: 2.0
+    landing:
+      name: "~/landing"
+      button: 3

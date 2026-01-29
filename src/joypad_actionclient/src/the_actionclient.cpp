@@ -14,6 +14,11 @@ int main(int argc, char ** argv) {
   rclcpp::init(argc, argv);
   auto sub_node = std::make_shared<JoySub>();
 
+  auto arm_client_node = std::make_shared<ArmClient>();
+  auto disarm_client_node = std::make_shared<DisarmClient>();
+  auto landing_client_node = std::make_shared<LandingClient>();
+  auto takeoff_client_node = std::make_shared<TakeoffClient>();
+
   rclcpp::spin(sub_node);
   rclcpp::shutdown();
 

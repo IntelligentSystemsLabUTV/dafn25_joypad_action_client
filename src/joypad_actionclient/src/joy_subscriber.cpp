@@ -37,9 +37,9 @@ JoySub::JoySub()
 	```
 ***/
 
-// TODO: implement & brainstorm
 void JoySub::msg_callback(const JoyMsg::SharedPtr msg)
 {
-  RCLCPP_INFO(this->get_logger(), "[JOY SUB] Got message");
-	std::cout << "[JOY SUB] I'm so sad TwT" << std::endl;
+	// TODO: make it actually functional (this may be how you get the fields in /joy but the type for these variables might be a SharedPtr structured a li'l more sofisticated?)
+	Time::SharedPtr time_stamp = msg -> header -> stamp;
+  RCLCPP_INFO(this->get_logger(), "[JOY SUB] Got message at ns=\"%u\"", msg->sec * (uint32) 1e9 + msg->nanosec);
 }
