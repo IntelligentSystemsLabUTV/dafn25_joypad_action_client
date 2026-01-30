@@ -1,0 +1,79 @@
+header_include_path: ../include/joypad_actionclient/the_actionclient.hpp
+# namespace: node_namespace # This is optional
+manager_name: params_manager # This is optional
+node_class_name: JoypadActionClient 
+
+params:
+  arm:
+		name:
+			type: string
+			default_value: "~/arm" 
+			description: "Name of the action interested in this button"
+			constraints: "Cannot be changed"
+			read_only: true
+		button:
+			type: integer
+			default_value: 0 
+			min_value: 0 
+			max_value: 11 
+			step: 1
+			description: "Button assigned to the arm action"
+			constraints: "Must be between 0 and 11"
+			read_only: false
+  disarm:
+		name:
+			type: string
+			default_value: "~/disarm"
+			description: "Name of the action interested in this button"
+			constraints: "Cannot be changed"
+			read_only: true
+		button:
+			type: integer
+			default_value: 1 
+			min_value: 0 
+			max_value: 11 
+			step: 1
+			description: "Button assigned to the disarm action"
+			constraints: "Must be between 0 and 11"
+			read_only: false
+  takeoff:
+		name:
+			type: string
+			default_value: "~/takeoff" 
+			description: "Name of the action interested in this button"
+			constraints: "Cannot be changed"
+			read_only: true
+		button:
+			type: integer
+			default_value: 2 
+			min_value: 0 
+			max_value: 11 
+			step: 1
+			description: "Button assigned to the takeoff action"
+			constraints: "Must be between 0 and 11"
+			read_only: false
+		target_altitude:
+			type: double
+			default_value: 0.5
+			min_value: 0.0
+			max_value: 1.0
+			step: 0.0
+			description: "Height the drone must reach from ground level"
+			constraints: "Can be zero, must be in meters"
+			read_only: false
+  landing:
+		name:
+			type: string
+			default_value: "~/landing" 
+			description: "Name of the action interested in this button"
+			constraints: "Cannot be changed"
+			read_only: true
+		button:
+			type: integer
+			default_value: 3 
+			min_value: 0 
+			max_value: 11 
+			step: 1
+			description: "Button assigned to the landing action"
+			constraints: "Must be between 0 and 11"
+			read_only: false

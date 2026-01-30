@@ -1,4 +1,4 @@
-# AI
+# AI+
 # TODO: chage the buttons' numbers to the ones we actually want to use (ofc, same applies to the takeoff and landing parameters)
 # TODO: possibly change namespace for the names from "/xxx" to "test_server/xxx" in order to test interractions w the test_server
 joypad_actionclient:

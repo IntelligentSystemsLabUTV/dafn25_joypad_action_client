@@ -7,8 +7,7 @@ using JoyMsg = sensor_msgs::msg::Joy;
 class JoySub : public rclcpp::Node
 {
 public:
-  //! There must always be a constructor, with arbitrary input arguments
-  JoySub();
+    JoySub();
 
 private:
   rclcpp::Subscription<JoyMsg>::SharedPtr subscriber_;
