@@ -1,18 +1,15 @@
-# AI+
-# TODO: chage the buttons' numbers to the ones we actually want to use (ofc, same applies to the takeoff and landing parameters)
-# TODO: possibly change namespace for the names from "/xxx" to "test_server/xxx" in order to test interractions w the test_server
 joypad_actionclient:
   ros__parameters:
     arm:
-      name: "~/arm"
+      name: "/test_server_node/arm"
       button: 0
     disarm:
-      name: "~/disarm"
+      name: "/test_server_node/disarm"
       button: 1
     takeoff:
-      name: "~/takeoff"
+      name: "/test_server_node/takeoff"
       button: 2
       target_altitude: 2.0
     landing:
-      name: "~/landing"
+      name: "/test_server_node/landing"
       button: 3

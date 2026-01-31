@@ -1,4 +1,4 @@
-header_include_path: ../include/joypad_actionclient/the_actionclient.hpp
+header_include_path: ../include/joypad_actionclient/
 # namespace: node_namespace # This is optional
 manager_name: params_manager # This is optional
 node_class_name: JoypadActionClient 
@@ -7,7 +7,7 @@ params:
   arm:
 		name:
 			type: string
-			default_value: "~/arm" 
+			default_value: "/test_server/arm" 
 			description: "Name of the action interested in this button"
 			constraints: "Cannot be changed"
 			read_only: true
@@ -23,7 +23,7 @@ params:
   disarm:
 		name:
 			type: string
-			default_value: "~/disarm"
+			default_value: "/test_server/disarm"
 			description: "Name of the action interested in this button"
 			constraints: "Cannot be changed"
 			read_only: true
@@ -39,7 +39,7 @@ params:
   takeoff:
 		name:
 			type: string
-			default_value: "~/takeoff" 
+			default_value: "/test_server/takeoff" 
 			description: "Name of the action interested in this button"
 			constraints: "Cannot be changed"
 			read_only: true
@@ -64,7 +64,7 @@ params:
   landing:
 		name:
 			type: string
-			default_value: "~/landing" 
+			default_value: "/test_server/landing" 
 			description: "Name of the action interested in this button"
 			constraints: "Cannot be changed"
 			read_only: true
