@@ -14,6 +14,8 @@
 #include <dua_aircraft_interfaces/action/takeoff.hpp>
 #include <dua_aircraft_interfaces/action/landing.hpp>
 
+#include <simple_actionclient_cpp/simple_actionclient.hpp>
+
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -54,18 +56,48 @@ public:
 
     landing_action_name_ = this->get_parameter("landing.name").as_string();
     landing_button_idx_ = this->get_parameter("landing.button").as_int();
-
     // TODO: fin qui
 
     param_callback_handle_ = this->add_on_set_parameters_callback(
     	std::bind(&JoyActionClient::parameters_callback, this, _1));
  
     // TODO: valutare se vada modificato usando simple_actionclient_cpp
-    client_arm_ = rclcpp_action::create_client<Arm>(this, arm_action_name_);
-    client_disarm_ = rclcpp_action::create_client<Disarm>(this, disarm_action_name_);
-    client_takeoff_ = rclcpp_action::create_client<Takeoff>(this, takeoff_action_name_);
-    client_landing_ = rclcpp_action::create_client<Landing>(this, landing_action_name_);
-    // TODO: fin qui
+    client_arm_ = std::make_shared<simple_actionclient::Client<Arm>>(
+			this,
+			arm_action_name_	
+		,	std::bind(
+				&JoyActionClient::feedback_callback,
+				this,
+				_1,
+				_2)
+			);
+    client_disarm_ = std::make_shared<simple_actionclient::Client<Disarm>>(
+			this,
+			disarm_action_name_	
+		//,	std::bind(
+		//		&Disarm::feedback_callback,
+		//		this,
+		//		_1,
+		//		_2)
+			);
+    client_takeoff_ = std::make_shared<simple_actionclient::Client<Takeoff>>(
+			this,
+			takeoff_action_name_	
+		//,	std::bind(
+		//		&Takeoff::feedback_callback,
+		//		this,
+		//		_1,
+		//		_2)
+			);
+    client_landing_ = std::make_shared<simple_actionclient::Client<Landing>>(
+			this,
+			landing_action_name_	
+		//,	std::bind(
+		//		&Landing::feedback_callback,
+		//		this,
+		//		_1,
+		//		_2)
+			);
 
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "/joy",
@@ -76,10 +108,10 @@ public:
   }
 
 private:
-  rclcpp_action::Client<Arm>::SharedPtr client_arm_;
-  rclcpp_action::Client<Disarm>::SharedPtr client_disarm_;
-  rclcpp_action::Client<Takeoff>::SharedPtr client_takeoff_;
-  rclcpp_action::Client<Landing>::SharedPtr client_landing_;
+  std::shared_ptr<simple_actionclient::Client<Arm>> client_arm_;
+  std::shared_ptr<simple_actionclient::Client<Disarm>> client_disarm_;
+  std::shared_ptr<simple_actionclient::Client<Takeoff>> client_takeoff_;
+  std::shared_ptr<simple_actionclient::Client<Landing>> client_landing_;
 
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
@@ -149,21 +181,43 @@ private:
     */
 
     // TODO: valutare priorità dei messaggi di priorità, se l'else if su takeoff può essere eliminato o altri meccanismi di scelta su combinazioni di tasti premuti
+		// TODO: contorollare ret
     if (check_button_press(msg, arm_button_idx_)) {
-      send_arm_goal();
-    }
-    else if (check_button_press(msg, disarm_button_idx_)) {
-      send_disarm_goal();
-    }
-    else if (check_button_press(msg, takeoff_button_idx_)) {
-      send_takeoff_goal();
-    }
-    else if (check_button_press(msg, landing_button_idx_)) {
-      send_landing_goal();
-    }
+			// TODO: template everything Maki...
+			Arm::Goal goal{};
+			// TODO: fix critical bug (crash)
+      auto ret = this->client_arm_->call_sync(goal, true, 5000, 2000, 2000);
+			// NOTE: HERE 6 (return from async_send_goal in the library) IS NOT PRINTED
+			
+			// TODO: add this as the result_feedback when instantiating the action client nodes
+			RCLCPP_INFO(this->get_logger(), "idk");
+			result_callback_generic<Arm>(ret, arm_action_name_);
+
+		} else if (check_button_press(msg, disarm_button_idx_)) {
+			// TODO: template everything Maki...
+			Disarm::Goal goal{};
+			auto ret = this->client_disarm_->call_sync(goal, true, 5000, 2000, 2000);
+			// TODO: add this as the result_feedback when instantiating the action client nodes
+			result_callback_generic<Disarm>(ret,  disarm_action_name_);
+
+		} else if (check_button_press(msg, takeoff_button_idx_)) {
+			// TODO: template everything Maki...
+			Takeoff::Goal goal{};
+			auto ret = this->client_takeoff_->call_sync(goal, true, 5000, 2000, 2000);
+			// TODO: add this as the result_feedback when instantiating the action client nodes
+			result_callback_generic<Takeoff>(ret, takeoff_action_name_);
+
+		} else if (check_button_press(msg, landing_button_idx_)) {
+			// TODO: template everything Maki...
+			Landing::Goal goal{};
+			auto ret = this->client_landing_->call_sync(goal, true, 5000, 2000, 2000);
+			// TODO: add this as the result_feedback when instantiating the action client nodes
+			result_callback_generic<Landing>(ret, landing_action_name_);
+
+  	}
 
     last_buttons_ = msg->buttons;
-  }
+	}
 
   bool check_button_press(const sensor_msgs::msg::Joy::SharedPtr & msg, int button_idx)
   {
@@ -174,77 +228,12 @@ private:
     return (msg->buttons[button_idx] == 1 && last_buttons_[button_idx] == 0);
   }
 
-  void send_arm_goal()
+	template <typename ActionT>
+ 		void result_callback_generic(std::tuple<bool, rclcpp_action::ResultCode, std::shared_ptr<typename ActionT::Result>> & ret, const std::string & action_name)
+		
   {
-    if (!client_arm_->wait_for_action_server(std::chrono::seconds(1))) {
-      RCLCPP_ERROR(this->get_logger(), "Action server %s not available", arm_action_name_.c_str());
-      return;
-    }
-
-    auto goal_msg = Arm::Goal();
-    
-    auto send_goal_options = rclcpp_action::Client<Arm>::SendGoalOptions();
-    send_goal_options.result_callback = std::bind(&JoyActionClient::result_callback_generic<Arm>, this, _1, "Arm");
-    
-    RCLCPP_INFO(this->get_logger(), "Sending ARM goal");
-    client_arm_->async_send_goal(goal_msg, send_goal_options);
-  }
-
-  void send_disarm_goal()
-  {
-    if (!client_disarm_->wait_for_action_server(std::chrono::seconds(1))) {
-      RCLCPP_ERROR(this->get_logger(), "Action server %s not available", disarm_action_name_.c_str());
-      return;
-    }
-    auto goal_msg = Disarm::Goal();
-    
-    auto send_goal_options = rclcpp_action::Client<Disarm>::SendGoalOptions();
-    send_goal_options.result_callback = std::bind(&JoyActionClient::result_callback_generic<Disarm>, this, _1, "Disarm");
-    
-    RCLCPP_INFO(this->get_logger(), "Sending DISARM goal");
-    client_disarm_->async_send_goal(goal_msg, send_goal_options);
-  }
-
-  void send_takeoff_goal()
-  {
-    if (!client_takeoff_->wait_for_action_server(std::chrono::seconds(1))) {
-      RCLCPP_ERROR(this->get_logger(), "Action server %s not available", takeoff_action_name_.c_str());
-      return;
-    }
-    
-    auto goal_msg = Takeoff::Goal();
-    goal_msg.takeoff_pose.header.frame_id = "map"; 
-    goal_msg.takeoff_pose.header.stamp = this->get_clock()->now(); 
-    goal_msg.takeoff_pose.pose.position.z = takeoff_altitude_; 
-
-    auto send_goal_options = rclcpp_action::Client<Takeoff>::SendGoalOptions();
-    send_goal_options.result_callback = std::bind(&JoyActionClient::result_callback_generic<Takeoff>, this, _1, "Takeoff");
-    
-    RCLCPP_INFO(this->get_logger(), "Sending TAKEOFF goal (Alt: %.2f)", takeoff_altitude_);
-    client_takeoff_->async_send_goal(goal_msg, send_goal_options);
-  }
-
-  void send_landing_goal()
-  {
-    if (!client_landing_->wait_for_action_server(std::chrono::seconds(1))) {
-      RCLCPP_ERROR(this->get_logger(), "Action server %s not available", landing_action_name_.c_str());
-      return;
-    }
-    
-    auto goal_msg = Landing::Goal();
-    goal_msg.descend = false; 
-
-    auto send_goal_options = rclcpp_action::Client<Landing>::SendGoalOptions();
-    send_goal_options.result_callback = std::bind(&JoyActionClient::result_callback_generic<Landing>, this, _1, "Landing");
-    
-    RCLCPP_INFO(this->get_logger(), "Sending LANDING goal");
-    client_landing_->async_send_goal(goal_msg, send_goal_options);
-  }
-
-  template <typename ActionT>
-  void result_callback_generic(const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result, const std::string & action_name)
-  {
-    switch (result.code) {
+		auto code = std::get<rclcpp_action::ResultCode>(ret);
+    switch (code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
         RCLCPP_WARN(this->get_logger(), "Action %s SUCCEEDED", action_name.c_str());
         break;
@@ -259,15 +248,25 @@ private:
         break;
     }
   }
+
+	// TODO: actually implement. Also template it?
+	void feedback_callback(
+		const rclcpp_action::ClientGoalHandle<Arm>::SharedPtr goal_handle,
+		const Arm::Feedback::ConstSharedPtr feedback)
+	{
+    RCLCPP_INFO(this->get_logger(), "this does NOT get printed");
+	}
 };
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
   
+	std::cout << "WOW" << std::endl;
   auto node = std::make_shared<JoyActionClient>();
   rclcpp::spin(node);
   
   rclcpp::shutdown();
+		
   return 0;
 }

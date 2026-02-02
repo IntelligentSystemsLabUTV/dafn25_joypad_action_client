@@ -18,7 +18,8 @@ def generate_launch_description():
         package='joypad_actionclient',
         name='joypad_actionclient',
         executable='joypad_actionclient',
-        parameters=[config_file]
+        parameters=[config_file],
+        output='screen'
     )
 
     ld.add_action(node)
