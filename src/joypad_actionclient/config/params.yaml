@@ -1,0 +1,115 @@
+header_include_path: joypad_actionclient/joy_action_client.hpp
+node_class_name: JoyActionClient
+namespace: joypad_actionclient 
+manager_name: params_manager_
+
+### NOTE: facendo come da istruzioni di params_manager_cpp non funziona... vedi params_BROKEN.yaml per riferimento
+params:
+  "btn_idx_help_mapping.button":
+    type: integer
+    default_value: 0
+    min_value: 0
+    max_value: 11
+    step: 1
+    description: "Button assigned to the mapping helper printing function"
+    constraints: "Must be between 0 and 11"
+    read_only: false
+    var_name: btn_idx_help_mapping_idx_
+
+  "btn_idx_help_legend.button":
+    type: integer
+    default_value: 0
+    min_value: 0
+    max_value: 11
+    step: 1
+    description: "Button assigned to the legend helper printing function"
+    constraints: "Must be between 0 and 11"
+    read_only: false
+    var_name: btn_idx_help_legend_idx_
+
+  "actions.arm.name":
+    type: string
+    default_value: "/test_server/arm"
+    description: "Name of the action interested in this button"
+    constraints: "Cannot be changed"
+    read_only: true
+    var_name: arm_action_name_
+
+  "actions.arm.button":
+    type: integer
+    default_value: 0
+    min_value: 0
+    max_value: 11
+    step: 1
+    description: "Button assigned to the arm action"
+    constraints: "Must be between 0 and 11"
+    read_only: false
+    var_name: arm_button_idx_
+
+  "actions.disarm.name":
+    type: string
+    default_value: "/test_server/disarm"
+    description: "Name of the action interested in this button"
+    constraints: "Cannot be changed"
+    read_only: true
+    var_name: disarm_action_name_
+
+  "actions.disarm.button":
+    type: integer
+    default_value: 1
+    min_value: 0
+    max_value: 11
+    step: 1
+    description: "Button assigned to the disarm action"
+    constraints: "Must be between 0 and 11"
+    read_only: false
+    var_name: disarm_button_idx_
+
+  "actions.takeoff.name":
+    type: string
+    default_value: "/test_server/takeoff"
+    description: "Name of the action interested in this button"
+    constraints: "Cannot be changed"
+    read_only: true
+    var_name: takeoff_action_name_
+
+  "actions.takeoff.button":
+    type: integer
+    default_value: 2
+    min_value: 0
+    max_value: 11
+    step: 1
+    description: "Button assigned to the takeoff action"
+    constraints: "Must be between 0 and 11"
+    read_only: false
+    var_name: takeoff_button_idx_
+
+  "actions.takeoff.altitude":
+    type: double
+    default_value: 0.5
+    min_value: 0.0
+    max_value: 50.0
+    step: 0.1
+    description: "Height the drone must reach from ground level"
+    constraints: "Can be zero, must be in meters"
+    read_only: false
+    var_name: takeoff_altitude_
+
+  "actions.landing.name":
+    type: string
+    default_value: "/test_server/landing"
+    description: "Name of the action interested in this button"
+    constraints: "Cannot be changed"
+    read_only: true
+    var_name: landing_action_name_
+
+  "actions.landing.button":
+    type: integer
+    default_value: 3
+    min_value: 0
+    max_value: 11
+    step: 1
+    description: "Button assigned to the landing action"
+    constraints: "Must be between 0 and 11"
+    read_only: false
+    var_name: landing_button_idx_

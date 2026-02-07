@@ -1,273 +1,260 @@
-#include <memory>
-#include <string>
-#include <vector>
-#include <map>
-#include <chrono>
-#include <iostream>
+#include "joypad_actionclient/joy_action_client.hpp"
 
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
-#include <sensor_msgs/msg/joy.hpp>
+namespace joypad_actionclient {
 
-#include <dua_hardware_interfaces/action/arm.hpp>
-#include <dua_hardware_interfaces/action/disarm.hpp>
-#include <dua_aircraft_interfaces/action/takeoff.hpp>
-#include <dua_aircraft_interfaces/action/landing.hpp>
-
-using std::placeholders::_1;
-using std::placeholders::_2;
-
-class JoyActionClient : public rclcpp::Node
+JoyActionClient::JoyActionClient(const rclcpp::NodeOptions & options)
+	: Node("joy_action_client", options),
+  params_manager_(std::make_shared<params_manager::Manager>(this, true))
 {
-public:
-  using Arm = dua_hardware_interfaces::action::Arm;
-  using Disarm = dua_hardware_interfaces::action::Disarm;
-  using Takeoff = dua_aircraft_interfaces::action::Takeoff;
-  using Landing = dua_aircraft_interfaces::action::Landing;
+  init_parameters();
+  validate_parameters();
 
-  JoyActionClient()
-   : Node("joy_action_client") 
-  {
-    // TODO: riscrivere usando params_manager_cpp
-    this->declare_parameter("arm.name", "arm");
-    this->declare_parameter("arm.button", -1); 
-    
-    this->declare_parameter("disarm.name", "disarm");
-    this->declare_parameter("disarm.button", -1);
-    
-    this->declare_parameter("takeoff.name", "takeoff");
-    this->declare_parameter("takeoff.button", -1);
-    this->declare_parameter("takeoff.altitude", 2.5); 
-    
-    this->declare_parameter("landing.name", "landing");
-    this->declare_parameter("landing.button", -1);
+  client_arm_ 		= std::make_shared<simple_actionclient::Client<Arm>>(this, arm_action_name_);
+  client_disarm_ 	= std::make_shared<simple_actionclient::Client<Disarm>>(this, disarm_action_name_);
+  client_takeoff_ = std::make_shared<simple_actionclient::Client<Takeoff>>(this, takeoff_action_name_);
+  client_landing_ = std::make_shared<simple_actionclient::Client<Landing>>(this, landing_action_name_);
 
-    arm_action_name_ = this->get_parameter("arm.name").as_string();
-    arm_button_idx_ = this->get_parameter("arm.button").as_int();
+  joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
+    "/joy",
+    10, // NOTE: QoS per il subscriber joy (10 messagi in coda max)
+    std::bind(&JoyActionClient::joy_callback, this, std::placeholders::_1));
 
-    disarm_action_name_ = this->get_parameter("disarm.name").as_string();
-    disarm_button_idx_ = this->get_parameter("disarm.button").as_int();
+  print_control_scheme();
 
-    takeoff_action_name_ = this->get_parameter("takeoff.name").as_string();
-    takeoff_button_idx_ = this->get_parameter("takeoff.button").as_int();
-    takeoff_altitude_ = this->get_parameter("takeoff.altitude").as_double();
-
-    landing_action_name_ = this->get_parameter("landing.name").as_string();
-    landing_button_idx_ = this->get_parameter("landing.button").as_int();
-
-    // TODO: fin qui
-
-    param_callback_handle_ = this->add_on_set_parameters_callback(
-    	std::bind(&JoyActionClient::parameters_callback, this, _1));
- 
-    // TODO: valutare se vada modificato usando simple_actionclient_cpp
-    client_arm_ = rclcpp_action::create_client<Arm>(this, arm_action_name_);
-    client_disarm_ = rclcpp_action::create_client<Disarm>(this, disarm_action_name_);
-    client_takeoff_ = rclcpp_action::create_client<Takeoff>(this, takeoff_action_name_);
-    client_landing_ = rclcpp_action::create_client<Landing>(this, landing_action_name_);
-    // TODO: fin qui
-
-    joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-      "/joy",
-       10,    // QoS Depth (numero degli ultimi messaggi che il nodo tiene in memoria) 
-      std::bind(&JoyActionClient::joy_callback, this, _1));
-
-    RCLCPP_INFO(this->get_logger(), "JoyActionClient initialized. Waiting for Joy commands...");
-  }
-
-private:
-  rclcpp_action::Client<Arm>::SharedPtr client_arm_;
-  rclcpp_action::Client<Disarm>::SharedPtr client_disarm_;
-  rclcpp_action::Client<Takeoff>::SharedPtr client_takeoff_;
-  rclcpp_action::Client<Landing>::SharedPtr client_landing_;
-
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-  OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
-
-  std::string arm_action_name_, disarm_action_name_, takeoff_action_name_, landing_action_name_;
-  int arm_button_idx_, disarm_button_idx_, takeoff_button_idx_, landing_button_idx_;
-  double takeoff_altitude_;
-
-  std::vector<int> last_buttons_;
-
-  // TODO: se necessario, riscrivere, altrimenti eliminare (fa pena :))
-  rcl_interfaces::msg::SetParametersResult parameters_callback(
-    const std::vector<rclcpp::Parameter> & parameters)
-  {
-    rcl_interfaces::msg::SetParametersResult result;
-    result.successful = true;
-    result.reason = "success";
-
-    for (const auto & param : parameters) {
-      if (param.get_name() == "arm.button") {
-        if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
-          arm_button_idx_ = param.as_int();
-          RCLCPP_INFO(this->get_logger(), "Reconfigured Arm Button: %d", arm_button_idx_);
-        } else {
-          result.successful = false;
-          result.reason = "arm.button must be an integer";
-        }
-      }
-      else if (param.get_name() == "disarm.button") {
-        if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
-          disarm_button_idx_ = param.as_int();
-          RCLCPP_INFO(this->get_logger(), "Reconfigured Disarm Button: %d", disarm_button_idx_);
-        }
-      }
-      else if (param.get_name() == "takeoff.button") {
-        if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
-          takeoff_button_idx_ = param.as_int();
-          RCLCPP_INFO(this->get_logger(), "Reconfigured Takeoff Button: %d", takeoff_button_idx_);
-        }
-      }
-      else if (param.get_name() == "landing.button") {
-        if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
-          landing_button_idx_ = param.as_int();
-          RCLCPP_INFO(this->get_logger(), "Reconfigured Landing Button: %d", landing_button_idx_);
-        }
-      }
-      else if (param.get_name() == "takeoff.altitude") {
-         if (param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE) {
-            takeoff_altitude_ = param.as_double();
-            RCLCPP_INFO(this->get_logger(), "Reconfigured Takeoff Altitude: %.2f", takeoff_altitude_);
-         }
-      }
-    }
-    return result;
-  }
-  // TODO: fin qui 
-
-  void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
-  {
-    if (last_buttons_.empty()) {
-      last_buttons_.resize(msg->buttons.size(), 0);
-    }
-
-    /* LOGICA DI CONTROLLO
-     * Si controlla se è stato premuto il tasto associato all'azione.
-     * La verifica usa un "fronte di salita" per inviare il goal una sola volta per pressione.
-    */
-
-    // TODO: valutare priorità dei messaggi di priorità, se l'else if su takeoff può essere eliminato o altri meccanismi di scelta su combinazioni di tasti premuti
-    if (check_button_press(msg, arm_button_idx_)) {
-      send_arm_goal();
-    }
-    else if (check_button_press(msg, disarm_button_idx_)) {
-      send_disarm_goal();
-    }
-    else if (check_button_press(msg, takeoff_button_idx_)) {
-      send_takeoff_goal();
-    }
-    else if (check_button_press(msg, landing_button_idx_)) {
-      send_landing_goal();
-    }
-
-    last_buttons_ = msg->buttons;
-  }
-
-  bool check_button_press(const sensor_msgs::msg::Joy::SharedPtr & msg, int button_idx)
-  {
-    if (button_idx < 0 || static_cast<size_t>(button_idx) >= msg->buttons.size()) {
-      return false; 
-    }
-
-    return (msg->buttons[button_idx] == 1 && last_buttons_[button_idx] == 0);
-  }
-
-  void send_arm_goal()
-  {
-    if (!client_arm_->wait_for_action_server(std::chrono::seconds(1))) {
-      RCLCPP_ERROR(this->get_logger(), "Action server %s not available", arm_action_name_.c_str());
-      return;
-    }
-
-    auto goal_msg = Arm::Goal();
-    
-    auto send_goal_options = rclcpp_action::Client<Arm>::SendGoalOptions();
-    send_goal_options.result_callback = std::bind(&JoyActionClient::result_callback_generic<Arm>, this, _1, "Arm");
-    
-    RCLCPP_INFO(this->get_logger(), "Sending ARM goal");
-    client_arm_->async_send_goal(goal_msg, send_goal_options);
-  }
-
-  void send_disarm_goal()
-  {
-    if (!client_disarm_->wait_for_action_server(std::chrono::seconds(1))) {
-      RCLCPP_ERROR(this->get_logger(), "Action server %s not available", disarm_action_name_.c_str());
-      return;
-    }
-    auto goal_msg = Disarm::Goal();
-    
-    auto send_goal_options = rclcpp_action::Client<Disarm>::SendGoalOptions();
-    send_goal_options.result_callback = std::bind(&JoyActionClient::result_callback_generic<Disarm>, this, _1, "Disarm");
-    
-    RCLCPP_INFO(this->get_logger(), "Sending DISARM goal");
-    client_disarm_->async_send_goal(goal_msg, send_goal_options);
-  }
-
-  void send_takeoff_goal()
-  {
-    if (!client_takeoff_->wait_for_action_server(std::chrono::seconds(1))) {
-      RCLCPP_ERROR(this->get_logger(), "Action server %s not available", takeoff_action_name_.c_str());
-      return;
-    }
-    
-    auto goal_msg = Takeoff::Goal();
-    goal_msg.takeoff_pose.header.frame_id = "map"; 
-    goal_msg.takeoff_pose.header.stamp = this->get_clock()->now(); 
-    goal_msg.takeoff_pose.pose.position.z = takeoff_altitude_; 
-
-    auto send_goal_options = rclcpp_action::Client<Takeoff>::SendGoalOptions();
-    send_goal_options.result_callback = std::bind(&JoyActionClient::result_callback_generic<Takeoff>, this, _1, "Takeoff");
-    
-    RCLCPP_INFO(this->get_logger(), "Sending TAKEOFF goal (Alt: %.2f)", takeoff_altitude_);
-    client_takeoff_->async_send_goal(goal_msg, send_goal_options);
-  }
-
-  void send_landing_goal()
-  {
-    if (!client_landing_->wait_for_action_server(std::chrono::seconds(1))) {
-      RCLCPP_ERROR(this->get_logger(), "Action server %s not available", landing_action_name_.c_str());
-      return;
-    }
-    
-    auto goal_msg = Landing::Goal();
-    goal_msg.descend = false; 
-
-    auto send_goal_options = rclcpp_action::Client<Landing>::SendGoalOptions();
-    send_goal_options.result_callback = std::bind(&JoyActionClient::result_callback_generic<Landing>, this, _1, "Landing");
-    
-    RCLCPP_INFO(this->get_logger(), "Sending LANDING goal");
-    client_landing_->async_send_goal(goal_msg, send_goal_options);
-  }
-
-  template <typename ActionT>
-  void result_callback_generic(const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result, const std::string & action_name)
-  {
-    switch (result.code) {
-      case rclcpp_action::ResultCode::SUCCEEDED:
-        RCLCPP_WARN(this->get_logger(), "Action %s SUCCEEDED", action_name.c_str());
-        break;
-      case rclcpp_action::ResultCode::ABORTED:
-        RCLCPP_ERROR(this->get_logger(), "Action %s FAILED (Aborted)", action_name.c_str());
-        break;
-      case rclcpp_action::ResultCode::CANCELED:
-        RCLCPP_ERROR(this->get_logger(), "Action %s FAILED (Canceled)", action_name.c_str());
-        break;
-      default:
-        RCLCPP_FATAL(this->get_logger(), "Action %s ERROR (Unknown code)", action_name.c_str());
-        break;
-    }
-  }
-};
-
-int main(int argc, char * argv[])
-{
-  rclcpp::init(argc, argv);
-  
-  auto node = std::make_shared<JoyActionClient>();
-  rclcpp::spin(node);
-  
-  rclcpp::shutdown();
-  return 0;
+  RCLCPP_INFO(this->get_logger(), "JoyActionClient Component initialized.");
 }
+
+// Opzionale, definisce il costruttore nel caso in cui non gli passi parametri
+JoyActionClient::JoyActionClient() 
+: JoyActionClient(rclcpp::NodeOptions()) 
+{}
+
+// NOTE: siccome la soluzione proposta
+JoyActionClient::~JoyActionClient()
+{
+  for (auto & t : active_threads_) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+}
+
+void JoyActionClient::validate_parameters()
+{
+  bool valid = true;
+  auto check_btn = [&](int64_t val, const std::string& name) {
+		// NOTE: specifichiamo gli indici minimo e massimo per la mappatura tasti
+		// Una scelta più selettiva con, e.g. una blacklist avrebbe più senso
+		// Questo controllo è un sanity check che il numero del bottone non sia
+		// out-of-bounds
+    if (val < MIN_BUTTONS_NUM || val > MAX_BUTTONS_NUM) {
+      RCLCPP_FATAL(this->get_logger(), 
+        "Parameter '%s' invalid: %ld. Must be between %d and %d", name.c_str(), val, MIN_BUTTONS_NUM, MAX_BUTTONS_NUM);
+      valid = false;
+    }
+  };
+
+  // NOTE: queste sono chiamate da una funzione definita nel qui sopra 
+  check_btn(arm_button_idx_,     		"actions.arm.button");
+  check_btn(disarm_button_idx_,  		"actions.disarm.button");
+  check_btn(takeoff_button_idx_, 		"actions.takeoff.button");
+  check_btn(landing_button_idx_, 		"actions.landing.button");
+  check_btn(btn_idx_help_mapping_idx_, 	"btn_idx_help_mapping.button");
+  check_btn(btn_idx_help_legend_idx_ , 	"btn_idx_help_legend.button" );
+
+  if (takeoff_altitude_ < 0.0) {
+    RCLCPP_FATAL(this->get_logger(), 
+      "Parameter 'actions.takeoff.altitude' invalid: %.2f. Must be positive.", takeoff_altitude_);
+    valid = false;
+  }
+
+  if (!valid) {
+    throw std::runtime_error("Invalid parameter configuration. Node startup aborted.");
+  }
+}
+
+std::string JoyActionClient::get_button_label(int64_t idx) const
+{
+  // NOTE: questa mappatura sembrerebbe standard Linux
+  switch(idx) {
+    case 0: return "A / Cross";
+    case 1: return "B / Circle";
+    case 2: return "X / Square";
+    case 3: return "Y / Triangle";
+    case 4: return "LB / L1";
+    case 5: return "RB / R1";
+    case 6: return "Back / Share";
+    case 7: return "Start / Options";
+    case 8: return "Power / PS";
+    case 9: return "L3 (Stick Click)";
+    case 10: return "R3 (Stick Click)";
+
+    default: return "Button " + std::to_string(idx);
+  }
+}
+
+void JoyActionClient::print_control_scheme() const
+{
+  std::stringstream ss;
+  ss << "\n==========================================\n";
+  ss << "      CURRENT CONFIGURATION MAPPING       \n";
+  ss << "==========================================\n";
+  ss << " ACTION      | BUTTON ID | LABEL (Xbox/PS)\n";
+  ss << "-------------|-----------|----------------\n";
+  
+  auto add_row = [&](const std::string& action, int64_t id) {
+    char buffer[100];
+    snprintf(buffer, sizeof(buffer), " %-11s | %2ld        | %s\n", 
+             action.c_str(), id, get_button_label(id).c_str());
+    ss << buffer;
+  };
+
+  add_row("ARM", arm_button_idx_);
+  add_row("DISARM", disarm_button_idx_);
+  add_row("TAKEOFF", takeoff_button_idx_);
+  add_row("LANDING", landing_button_idx_);
+  
+  ss << "-------------|-----------|----------------\n";
+  add_row("SHOW MAP", 		btn_idx_help_mapping_idx_);
+  add_row("SHOW LEGEND", 	btn_idx_help_legend_idx_ );
+  
+  ss << "==========================================\n";
+
+  RCLCPP_INFO(this->get_logger(), "%s", ss.str().c_str());
+}
+
+void JoyActionClient::print_all_buttons_legend() const
+{
+  std::stringstream ss;
+  ss << "\n------------------------------------------\n";
+  ss << "      FULL BUTTON REFERENCE LEGEND        \n";
+  ss << "------------------------------------------\n";
+  ss << " ID  | LABEL (Xbox/PS)                    \n";
+  ss << "-----|------------------------------------\n";
+  
+  for (int64_t i = 0; i <= 10; ++i) {
+    char buffer[100];
+    snprintf(buffer, sizeof(buffer), " %2ld  | %s\n", i, get_button_label(i).c_str());
+    ss << buffer;
+  }
+  ss << "------------------------------------------\n";
+  
+  RCLCPP_INFO(this->get_logger(), "%s", ss.str().c_str());
+}
+
+void JoyActionClient::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
+{
+  // NOTE: last_buttons_ è carino. Se tenesse conto non solo dell'ultimo time-step potrebbe
+  // implementare politiche in cui l'azione associata alla pressione prolungata di un bottone
+  // sia diversa da quella di una pressione singola
+  if (last_buttons_.empty()) {
+    last_buttons_.resize(msg->buttons.size(), 0);
+    last_buttons_ = msg->buttons;
+    return;
+  }
+  
+	// NOTE: ecco una descrizione del metodo emblace_back presa da
+	// cppreference
+	// std::vector<T,Allocator>::emplace_back
+	// Appends a new element to the end of the container.
+	// The element is constructed through std::allocator_traits::construct,
+	// which typically uses placement new to construct the element in-place
+	// at the location provided by the container.
+	// The arguments args... are forwarded to the constructor
+	// as std::forward<Args>(args)....
+	// TL;DR: è una append 
+	// NOTE: ad ogni nuovo bottone premuto corrisponde lo spawn di un nuovo
+	// thread (i.e. non c'è un riuso dei thread per lo stesso action client) 
+  if (check_button_press(msg, static_cast<int>(arm_button_idx_))) {
+    active_threads_.emplace_back(&JoyActionClient::execute_arm, this);
+  }
+  if (check_button_press(msg, static_cast<int>(disarm_button_idx_))) {
+    active_threads_.emplace_back(&JoyActionClient::execute_disarm, this);
+  }
+  if (check_button_press(msg, static_cast<int>(takeoff_button_idx_))) {
+    active_threads_.emplace_back(&JoyActionClient::execute_takeoff, this);
+  }
+  if (check_button_press(msg, static_cast<int>(landing_button_idx_))) {
+    active_threads_.emplace_back(&JoyActionClient::execute_landing, this);
+  }
+  // NOTE: questa aggiunta è un'idea GENIALE di Francesco: con Start stampiamo
+  // a schermo la mappatura dei tasti, mentre con Select solo quelli gestiti
+  // degli actionclient 
+  if (check_button_press(msg, static_cast<int>(btn_idx_help_mapping_idx_))) {
+    active_threads_.emplace_back(&JoyActionClient::print_control_scheme, this);
+  }
+  if (check_button_press(msg, static_cast<int>(btn_idx_help_legend_idx_))) {
+    active_threads_.emplace_back(&JoyActionClient::print_all_buttons_legend, this);
+  }
+
+  last_buttons_ = msg->buttons;
+}
+
+// NOTE: politica di detection del rising-edge alla pressione di un bottone
+bool JoyActionClient::check_button_press(const sensor_msgs::msg::Joy::SharedPtr & msg, int button_idx)
+{
+  if (button_idx < 0 || static_cast<size_t>(button_idx) >= msg->buttons.size()) {
+    return false;
+  }
+  return (msg->buttons[button_idx] == 1 && last_buttons_[button_idx] == 0);
+}
+
+void JoyActionClient::execute_arm()
+{
+  if (!client_arm_) return;
+  
+  Arm::Goal goal;
+  RCLCPP_INFO(this->get_logger(), "Requesting ARM...");
+  
+  // NOTE: false potrebbe essere spin o cancel_on_timeout. Per me è spin (L)
+  // NOTE: i timeout possono essere omessi, in tal caso simple_actionclient_cpp li imposterà di default a 5s
+  auto ret = client_arm_->call_sync(goal, false, SEND_GOAL_TIMEOUT, RESULT_GOAL_TIMEOUT, CANCEL_GOAL_TIMEOUT);
+
+  // NOTE: process_result è definito in ../include/joypad_actionclient/joy_action_client.hpp
+  process_result<Arm>(ret, "Arm");
+}
+
+void JoyActionClient::execute_disarm()
+{
+  if (!client_disarm_) return;
+
+  Disarm::Goal goal;
+  RCLCPP_INFO(this->get_logger(), "Requesting DISARM...");
+  
+  auto ret = client_disarm_->call_sync(goal, false, SEND_GOAL_TIMEOUT, RESULT_GOAL_TIMEOUT, CANCEL_GOAL_TIMEOUT);
+  process_result<Disarm>(ret, "Disarm");
+}
+
+void JoyActionClient::execute_takeoff()
+{
+  if (!client_takeoff_) return;
+
+  Takeoff::Goal goal;
+  goal.takeoff_pose.header.frame_id = "map";
+  goal.takeoff_pose.header.stamp = this->get_clock()->now();
+  goal.takeoff_pose.pose.position.z = takeoff_altitude_;
+
+  RCLCPP_INFO(this->get_logger(), "Requesting TAKEOFF (Alt: %.2f)...", takeoff_altitude_);
+  
+  auto ret = client_takeoff_->call_sync(goal, false, SEND_GOAL_TIMEOUT, RESULT_GOAL_TIMEOUT, CANCEL_GOAL_TIMEOUT);
+  process_result<Takeoff>(ret, "Takeoff");
+}
+
+void JoyActionClient::execute_landing()
+{
+  if (!client_landing_) return;
+
+  Landing::Goal goal;
+  goal.descend = false;
+
+  RCLCPP_INFO(this->get_logger(), "Requesting LANDING...");
+  
+  auto ret = client_landing_->call_sync(goal, false, SEND_GOAL_TIMEOUT, RESULT_GOAL_TIMEOUT, CANCEL_GOAL_TIMEOUT);
+  process_result<Landing>(ret, "Landing");
+}
+
+} // namespace joypad_actionclient
+
+// NOTE: per capire il senso di questo leggere components.md
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(joypad_actionclient::JoyActionClient)
