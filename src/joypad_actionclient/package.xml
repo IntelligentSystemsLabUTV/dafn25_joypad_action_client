@@ -12,9 +12,15 @@
   <depend>action_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
 
-	<depend>dua_hardware_interfaces</depend>
-	<depend>dua_aircraft_interfaces</depend>
+  <depend>dua_hardware_interfaces</depend>
+  <depend>dua_aircraft_interfaces</depend>
+  <depend>dua_common_interfaces</depend>
+
+  <depend>sensor_msgs</depend>
+  <depend>simple_actionclient_cpp</depend>
+  <depend>params_manager_cpp</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

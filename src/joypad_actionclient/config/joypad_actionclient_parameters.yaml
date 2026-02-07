@@ -1,15 +1,16 @@
 joypad_actionclient:
   ros__parameters:
-    arm:
-      name: "/test_server_node/arm"
-      button: 0
-    disarm:
-      name: "/test_server_node/disarm"
-      button: 1
-    takeoff:
-      name: "/test_server_node/takeoff"
-      button: 2
-      target_altitude: 2.0
-    landing:
-      name: "/test_server_node/landing"
-      button: 3
+    actions:
+      arm:
+        name: "/test_server_node/arm"
+        button: 0
+      disarm:
+        name: "/test_server_node/disarm"
+        button: 1
+      takeoff:
+        name: "/test_server_node/takeoff"
+        button: 2
+        altitude: 2.0  # Corretto da target_altitude a altitude come da PDF
+      landing:
+        name: "/test_server_node/landing"
+        button: 3
