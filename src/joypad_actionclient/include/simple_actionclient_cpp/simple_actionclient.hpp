@@ -110,9 +110,7 @@ public:
   std::shared_future<typename ActionGoalHandleT::SharedPtr> send_goal(
     const typename ActionT::Goal & goal_msg)
   {
-    std::cout << "HERE 5" << std::endl;
     return client_->async_send_goal(goal_msg, client_opts_);
-    std::cout << "HERE 6" << std::endl;
   }
 
   /**
@@ -133,9 +131,7 @@ public:
       std::chrono::milliseconds(5000) :
       std::chrono::milliseconds(timeout_msec);
 
-    std::cout << "HERE 3" << std::endl;
     auto goal_future = send_goal(goal_msg);
-    std::cout << "HERE 4" << std::endl;
     if (!spin) {
       if (goal_future.wait_for(timeout) == std::future_status::ready) {
         return goal_future.get();
@@ -309,10 +305,8 @@ public:
     int64_t get_result_timeout_msec = 0,
     int64_t cancel_timeout_msec = 0)
   {
-    std::cout << "HERE 1" << std::endl;
     // Send the goal
     auto goal_handle = send_goal_sync(goal_msg, spin, send_goal_timeout_msec);
-    std::cout << "HERE 2" << std::endl;
     if (!goal_handle) {
       RCLCPP_ERROR(
         node_->get_logger(),

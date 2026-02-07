@@ -1,8 +1,10 @@
 # ROS 2 workspace folders
 **/build/*
 **/install/*
-**/log/*
+**/__pycache__
+**/log*
 **/TODO.md
+**/*.swp
 
 # Uncomment the following to avoid pushing personal configurations
 # .vscode/
