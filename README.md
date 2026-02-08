@@ -3,10 +3,6 @@
 + `CTRL+C` invia un segnale di kill al processo padre che esegue il nodo `JoyActionClient`, ma la chiusura del terminale da UI no e in questo caso ritroviamo `/joypad_actionclient` come nodo attivo (`ros2 node list`)
 
 ### MODIFICHE
-+ Alla pressione di un bottone corrisponde lo spawn di un thread per l'action client associato all'azione corrispondente a quel bottone
-  
-  Tendenzialmente preferiremmo avere un numero limitato di thread spawnabili oppure un numero fissato a compilazione e che matchi sufficentemente bene quello degli actionclient da gestire
-
 + Modificare il gestore dei parametri in modo che button sia una stringa e non un intero potrebbe essere tosta: diversi controller hanno diverse mappature di tasti (e.g. il controller PS3 di L ha all'indice 5 START, F parrebbe avere L1)
   
   Un config yaml (non necessariamente gestiti da ROS2) di questo tipo `vvv` potrebbe implementare questo con la giusta logica:  

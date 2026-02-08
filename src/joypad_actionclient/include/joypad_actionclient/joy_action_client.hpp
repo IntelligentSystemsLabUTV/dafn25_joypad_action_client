@@ -29,11 +29,21 @@
 #define RESULT_GOAL_TIMEOUT  5000
 #define CANCEL_GOAL_TIMEOUT  2000
 
-// NOTE: questi parametri sarebbe bene definirli da file yaml
-#define BTN_IDX_HELP_MAPPING 4
-#define BTN_IDX_HELP_LEGEND  5
+#define MAX_NUM_THREADS 8
 
 namespace joypad_actionclient {
+
+void clear_threads_vector(std::vector<std::thread>& threads);
+
+// NOTE: ecco una descrizione del metodo try_emblace_back presa da
+// cppreference
+// Conditionally appends an object of type T to the end of the container.
+// If size() == capacity() is true, there are no effects. Otherwise, appends direct-non-list-initialized with std::forward<Args>(args)... object of type T.
+//No iterators or references are invalidated, except end(), which is invalidated if the insertion occurs.
+// TL;DR: è una append che non resize-a il vettore (i vettori inplace a differenza di quelli normali hanno una capacità max)
+// Il tipo vector non supporta emplace e gli inplace_vector non sono standard C++, quindi implementiamo una funzione che reimpiazzi try_emplace_back
+template <typename F, typename... Args>
+  void my_emplace(std::vector<std::thread>& threads, F&& f, Args&&... args);
 
 class JoyActionClient : public rclcpp::Node
 {
@@ -83,6 +93,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   
   std::vector<int> last_buttons_;
+  
   std::vector<std::thread> active_threads_;
 
   // NOTE: questo andrebbe caricato da parametri ma la specifica

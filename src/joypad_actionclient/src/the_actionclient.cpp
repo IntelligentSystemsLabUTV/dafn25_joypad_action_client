@@ -2,6 +2,32 @@
 
 namespace joypad_actionclient {
 
+void clear_threads_vector(std::vector<std::thread>& threads){
+    if (threads.size() >= MAX_NUM_THREADS){
+      for (auto & t : threads)
+        if (t.joinable())
+          t.join();
+      threads.clear();
+    }
+}
+
+// NOTE: ecco una descrizione del metodo try_emblace_back presa da
+// cppreference
+// Conditionally appends an object of type T to the end of the container.
+// If size() == capacity() is true, there are no effects. Otherwise, appends direct-non-list-initialized with std::forward<Args>(args)... object of type T.
+//No iterators or references are invalidated, except end(), which is invalidated if the insertion occurs.
+// TL;DR: è una append che non resize-a il vettore (i vettori inplace a differenza di quelli normali hanno una capacità max)
+// Il tipo vector non supporta emplace e gli inplace_vector non sono standard C++, quindi implementiamo una funzione che reimpiazzi try_emplace_back
+template <typename F, typename... Args>
+  void my_emplace(std::vector<std::thread>& threads, F&& f, Args&&... args)
+{
+    clear_threads_vector(threads);
+    threads.emplace_back(
+        std::forward<F>(f),
+        std::forward<Args>(args)...
+    );
+}
+
 JoyActionClient::JoyActionClient(const rclcpp::NodeOptions & options)
 	: Node("joy_action_client", options),
   params_manager_(std::make_shared<params_manager::Manager>(this, true))
@@ -29,14 +55,9 @@ JoyActionClient::JoyActionClient()
 : JoyActionClient(rclcpp::NodeOptions()) 
 {}
 
-// NOTE: siccome la soluzione proposta
 JoyActionClient::~JoyActionClient()
 {
-  for (auto & t : active_threads_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
+  clear_threads_vector(active_threads_);
 }
 
 void JoyActionClient::validate_parameters()
@@ -153,38 +174,26 @@ void JoyActionClient::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     return;
   }
   
-	// NOTE: ecco una descrizione del metodo emblace_back presa da
-	// cppreference
-	// std::vector<T,Allocator>::emplace_back
-	// Appends a new element to the end of the container.
-	// The element is constructed through std::allocator_traits::construct,
-	// which typically uses placement new to construct the element in-place
-	// at the location provided by the container.
-	// The arguments args... are forwarded to the constructor
-	// as std::forward<Args>(args)....
-	// TL;DR: è una append 
-	// NOTE: ad ogni nuovo bottone premuto corrisponde lo spawn di un nuovo
-	// thread (i.e. non c'è un riuso dei thread per lo stesso action client) 
   if (check_button_press(msg, static_cast<int>(arm_button_idx_))) {
-    active_threads_.emplace_back(&JoyActionClient::execute_arm, this);
+    my_emplace(active_threads_, &JoyActionClient::execute_arm, this);
   }
   if (check_button_press(msg, static_cast<int>(disarm_button_idx_))) {
-    active_threads_.emplace_back(&JoyActionClient::execute_disarm, this);
+    my_emplace(active_threads_, &JoyActionClient::execute_disarm, this);
   }
   if (check_button_press(msg, static_cast<int>(takeoff_button_idx_))) {
-    active_threads_.emplace_back(&JoyActionClient::execute_takeoff, this);
+    my_emplace(active_threads_, &JoyActionClient::execute_takeoff, this);
   }
   if (check_button_press(msg, static_cast<int>(landing_button_idx_))) {
-    active_threads_.emplace_back(&JoyActionClient::execute_landing, this);
+    my_emplace(active_threads_, &JoyActionClient::execute_landing, this);
   }
   // NOTE: questa aggiunta è un'idea GENIALE di Francesco: con Start stampiamo
   // a schermo la mappatura dei tasti, mentre con Select solo quelli gestiti
   // degli actionclient 
   if (check_button_press(msg, static_cast<int>(btn_idx_help_mapping_idx_))) {
-    active_threads_.emplace_back(&JoyActionClient::print_control_scheme, this);
+    my_emplace(active_threads_, &JoyActionClient::print_control_scheme, this);
   }
   if (check_button_press(msg, static_cast<int>(btn_idx_help_legend_idx_))) {
-    active_threads_.emplace_back(&JoyActionClient::print_all_buttons_legend, this);
+    my_emplace(active_threads_, &JoyActionClient::print_all_buttons_legend, this);
   }
 
   last_buttons_ = msg->buttons;
