@@ -1,14 +1,41 @@
 #include "joypad_actionclient/joy_action_client.hpp"
 
+// NOTE: modificare questa mappa per il proprio controller
+// Con ros2 topic echo /joy ho provato le combinazioni di tasti
+// e ho segnato il nome del bottone (UNK sta per UNKNOWN)
+std::array<std::string, 21> all_buttons_map = {
+  "A", // 0
+  "B", // 1
+  "X", // 2
+  "Y", // 3
+  "Select", // 4
+  "UNK", // 5
+  "Start", // 6
+  "L Stick Click", // 7
+  "R Stick Click", // 8
+  "L1", // 9
+  "R1", // 10
+  "DPad Up", // 11
+  "DPad Down", // 12
+  "DPad Left", // 13
+  "DPad Right", // 14
+  "UNK", // 15
+  "UNK", // 16
+  "UNK", // 17
+  "UNK", // 18
+  "UNK", // 19
+  "UNK", // 20
+};
+
 namespace joypad_actionclient {
 
 void clear_threads_vector(std::vector<std::thread>& threads){
-    if (threads.size() >= MAX_NUM_THREADS){
-      for (auto & t : threads)
-        if (t.joinable())
-          t.join();
-      threads.clear();
-    }
+  if (threads.size() >= MAX_NUM_THREADS){
+    for (auto & t : threads)
+      if (t.joinable())
+        t.join();
+    threads.clear();
+  }
 }
 
 // NOTE: ecco una descrizione del metodo try_emblace_back presa da
@@ -19,35 +46,35 @@ void clear_threads_vector(std::vector<std::thread>& threads){
 // TL;DR: è una append che non resize-a il vettore (i vettori inplace a differenza di quelli normali hanno una capacità max)
 // Il tipo vector non supporta emplace e gli inplace_vector non sono standard C++, quindi implementiamo una funzione che reimpiazzi try_emplace_back
 template <typename F, typename... Args>
-  void my_emplace(std::vector<std::thread>& threads, F&& f, Args&&... args)
+void my_emplace(std::vector<std::thread>& threads, F&& f, Args&&... args)
 {
-    clear_threads_vector(threads);
-    threads.emplace_back(
-        std::forward<F>(f),
-        std::forward<Args>(args)...
-    );
+  clear_threads_vector(threads);
+  threads.emplace_back(
+      std::forward<F>(f),
+      std::forward<Args>(args)...
+  );
 }
 
 JoyActionClient::JoyActionClient(const rclcpp::NodeOptions & options)
-	: Node("joy_action_client", options),
-  params_manager_(std::make_shared<params_manager::Manager>(this, true))
+  : Node("joy_action_client", options),
+params_manager_(std::make_shared<params_manager::Manager>(this, true))
 {
-  init_parameters();
-  validate_parameters();
+init_parameters();
+validate_parameters();
 
-  client_arm_ 		= std::make_shared<simple_actionclient::Client<Arm>>(this, arm_action_name_);
-  client_disarm_ 	= std::make_shared<simple_actionclient::Client<Disarm>>(this, disarm_action_name_);
-  client_takeoff_ = std::make_shared<simple_actionclient::Client<Takeoff>>(this, takeoff_action_name_);
-  client_landing_ = std::make_shared<simple_actionclient::Client<Landing>>(this, landing_action_name_);
+client_arm_ 		= std::make_shared<simple_actionclient::Client<Arm>>(this, arm_action_name_);
+client_disarm_ 	= std::make_shared<simple_actionclient::Client<Disarm>>(this, disarm_action_name_);
+client_takeoff_ = std::make_shared<simple_actionclient::Client<Takeoff>>(this, takeoff_action_name_);
+client_landing_ = std::make_shared<simple_actionclient::Client<Landing>>(this, landing_action_name_);
 
-  joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-    "/joy",
-    10, // NOTE: QoS per il subscriber joy (10 messagi in coda max)
-    std::bind(&JoyActionClient::joy_callback, this, std::placeholders::_1));
+joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
+  "/joy",
+  10, // NOTE: QoS per il subscriber joy (10 messagi in coda max)
+  std::bind(&JoyActionClient::joy_callback, this, std::placeholders::_1));
 
-  print_control_scheme();
+print_control_scheme();
 
-  RCLCPP_INFO(this->get_logger(), "JoyActionClient Component initialized.");
+RCLCPP_INFO(this->get_logger(), "JoyActionClient Component initialized.");
 }
 
 // Opzionale, definisce il costruttore nel caso in cui non gli passi parametri
@@ -57,61 +84,46 @@ JoyActionClient::JoyActionClient()
 
 JoyActionClient::~JoyActionClient()
 {
-  clear_threads_vector(active_threads_);
+clear_threads_vector(active_threads_);
 }
 
 void JoyActionClient::validate_parameters()
 {
-  bool valid = true;
-  auto check_btn = [&](int64_t val, const std::string& name) {
-		// NOTE: specifichiamo gli indici minimo e massimo per la mappatura tasti
-		// Una scelta più selettiva con, e.g. una blacklist avrebbe più senso
-		// Questo controllo è un sanity check che il numero del bottone non sia
-		// out-of-bounds
-    if (val < MIN_BUTTONS_NUM || val > MAX_BUTTONS_NUM) {
-      RCLCPP_FATAL(this->get_logger(), 
-        "Parameter '%s' invalid: %ld. Must be between %d and %d", name.c_str(), val, MIN_BUTTONS_NUM, MAX_BUTTONS_NUM);
-      valid = false;
-    }
-  };
-
-  // NOTE: queste sono chiamate da una funzione definita nel qui sopra 
-  check_btn(arm_button_idx_,     		"actions.arm.button");
-  check_btn(disarm_button_idx_,  		"actions.disarm.button");
-  check_btn(takeoff_button_idx_, 		"actions.takeoff.button");
-  check_btn(landing_button_idx_, 		"actions.landing.button");
-  check_btn(btn_idx_help_mapping_idx_, 	"btn_idx_help_mapping.button");
-  check_btn(btn_idx_help_legend_idx_ , 	"btn_idx_help_legend.button" );
-
-  if (takeoff_altitude_ < 0.0) {
+bool valid = true;
+auto check_btn = [&](int64_t val, const std::string& name) {
+      // NOTE: specifichiamo gli indici minimo e massimo per la mappatura tasti
+      // Una scelta più selettiva con, e.g. una blacklist avrebbe più senso
+      // Questo controllo è un sanity check che il numero del bottone non sia
+      // out-of-bounds
+  if (val < MIN_BUTTONS_NUM || val > MAX_BUTTONS_NUM) {
     RCLCPP_FATAL(this->get_logger(), 
-      "Parameter 'actions.takeoff.altitude' invalid: %.2f. Must be positive.", takeoff_altitude_);
+      "Parameter '%s' invalid: %ld. Must be between %d and %d", name.c_str(), val, MIN_BUTTONS_NUM, MAX_BUTTONS_NUM);
     valid = false;
   }
+};
 
-  if (!valid) {
-    throw std::runtime_error("Invalid parameter configuration. Node startup aborted.");
-  }
+// NOTE: queste sono chiamate da una funzione definita nel qui sopra 
+check_btn(arm_button_idx_,     		"actions.arm.button");
+check_btn(disarm_button_idx_,  		"actions.disarm.button");
+check_btn(takeoff_button_idx_, 		"actions.takeoff.button");
+check_btn(landing_button_idx_, 		"actions.landing.button");
+check_btn(btn_idx_help_mapping_idx_, 	"btn_idx_help_mapping.button");
+check_btn(btn_idx_help_legend_idx_ , 	"btn_idx_help_legend.button" );
+
+if (takeoff_altitude_ < 0.0) {
+  RCLCPP_FATAL(this->get_logger(), 
+    "Parameter 'actions.takeoff.altitude' invalid: %.2f. Must be positive.", takeoff_altitude_);
+  valid = false;
+}
+
+if (!valid) {
+  throw std::runtime_error("Invalid parameter configuration. Node startup aborted.");
+}
 }
 
 std::string JoyActionClient::get_button_label(int64_t idx) const
 {
-  // NOTE: questa mappatura sembrerebbe standard Linux
-  switch(idx) {
-    case 0: return "A / Cross";
-    case 1: return "B / Circle";
-    case 2: return "X / Square";
-    case 3: return "Y / Triangle";
-    case 4: return "LB / L1";
-    case 5: return "RB / R1";
-    case 6: return "Back / Share";
-    case 7: return "Start / Options";
-    case 8: return "Power / PS";
-    case 9: return "L3 (Stick Click)";
-    case 10: return "R3 (Stick Click)";
-
-    default: return "Button " + std::to_string(idx);
-  }
+  return all_buttons_map[idx];
 }
 
 void JoyActionClient::print_control_scheme() const
@@ -153,7 +165,7 @@ void JoyActionClient::print_all_buttons_legend() const
   ss << " ID  | LABEL (Xbox/PS)                    \n";
   ss << "-----|------------------------------------\n";
   
-  for (int64_t i = 0; i <= 10; ++i) {
+  for (int64_t i = 0; i <= MAX_BUTTONS_NUM - MIN_BUTTONS_NUM; ++i) {
     char buffer[100];
     snprintf(buffer, sizeof(buffer), " %2ld  | %s\n", i, get_button_label(i).c_str());
     ss << buffer;

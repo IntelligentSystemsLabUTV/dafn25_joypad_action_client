@@ -1,9 +1,9 @@
 joypad_actionclient:
   ros__parameters:
     btn_idx_help_mapping:
-      button: 5
-    btn_idx_help_legend:
       button: 6
+    btn_idx_help_legend:
+      button: 4
     actions:
       arm:
         name: "/test_server_node/arm"
